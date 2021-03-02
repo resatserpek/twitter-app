@@ -14,11 +14,9 @@ def get_user_id(name):
     URL = 'https://api.twitter.com/1.1/users/show.json?screen_name=' + name
     try:
         resp = requests.get(URL, headers=headers)
-        print(resp.text)
     except requests.exceptions.RequestException as e:
         print (e)
     data = resp.json()
-    print(data)
     return data['id_str']
 
 def get_user_name(uid):
