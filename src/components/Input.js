@@ -1,5 +1,5 @@
 import { useState } from "react";
-import data from '../data/data-1.json'
+import data from '../data/data-2.json'
 
 
 function Input(){
