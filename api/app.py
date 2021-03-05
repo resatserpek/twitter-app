@@ -1,5 +1,5 @@
 from flask import Flask, json, request, jsonify
-from scraper import mention_graph, mention_tree
+from scraper import mention_graph, mention_tree, get_social_circle
 app = Flask(__name__)
 
 
@@ -15,8 +15,9 @@ def get_mentions():
         return "Error"
     
     #tree = mention_tree(name)
-    graph = mention_graph(name)
-    return jsonify(graph.nodes)
+    #graph = mention_graph(name)
+    tree = get_social_circle(name)
+    return json.dumps(tree)
 
 @app.errorhandler(404)
 def page_not_found(e):

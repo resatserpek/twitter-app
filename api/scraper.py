@@ -1,7 +1,7 @@
 from networkx.readwrite import json_graph
 import requests
 import networkx as nx
-import json 
+import re
 KEY = 'Yz2OYLuBeAkpC93o6zb250NRk'
 SECRET = 'LE2lGJZ3a4eEjKycgvYHbYpbQxfvBd5pIcrVf8rYwV89d0wd2'
 TOKEN ='AAAAAAAAAAAAAAAAAAAAAGp%2BMwEAAAAAgMV5asR0sjjDd0jGof%2B2Lss%2FL58%3DHDF1XUNJULhWujwC6MewLILf0LKmqfnPl1josxVBJDmhXEb0UW'
@@ -12,12 +12,24 @@ headers = {"Authorization": "Bearer " + TOKEN}
 #Given a username return id
 def get_user_id(name):
     URL = 'https://api.twitter.com/1.1/users/show.json?screen_name=' + name
+    resp = any 
     try:
         resp = requests.get(URL, headers=headers)
     except requests.exceptions.RequestException as e:
-        print (e)
+        print (resp)
     data = resp.json()
     return data['id_str']
+
+def get_user_pic(name):    
+    URL = 'https://api.twitter.com/1.1/users/show.json?screen_name=' + name
+    resp = any 
+    try:
+        resp = requests.get(URL, headers=headers)
+    except requests.exceptions.RequestException as e:
+        print (resp)
+    data = resp.json()
+    data = re.sub(r'normal', 'bigger', data['profile_image_url_https'])
+    return data
 
 def get_user_name(uid):
 
@@ -32,14 +44,52 @@ def get_user_name(uid):
 #Given a user name import users that mentioned them
 def get_mentions(name):
 
-    URL = 'https://api.twitter.com/2/users/' + get_user_id(name) + '/mentions?expansions=author_id'
+    userID = ''
+    try:
+        userID = get_user_id(name)
+    except Exception as e:
+        print (e)
+    URL = 'https://api.twitter.com/2/users/' + userID + '/mentions?expansions=author_id'
     try:
         resp = requests.get(URL, headers=headers)
     except requests.exceptions.RequestException as e:
         print (e)
     return resp.json()['data']
 
+def get_social_circle(name):
+    mentions = get_mentions(name)
+    entity = {
+        "name": name,
+        "pic": get_user_pic(name),
+        "mentions" : get_secondary(name, mentions)
+    }
+    return entity
+    
 
+def get_secondary(name, mentions):
+    temp = []
+    for user in mentions:
+        user_name = get_user_name(user['author_id'])
+        if user_name != name:
+            entity = {
+                "name": user_name,
+                "pic": get_user_pic(user_name),
+                "mentions" : get_third(name, get_mentions(user_name))
+            }
+            temp.append(entity)
+    return temp
+def get_third(name, mentions):
+    temp = []
+    for user in mentions:
+        user_name = get_user_name(user['author_id'])
+        if user_name != name:
+            entity = {
+                "name": user_name,
+                "pic": get_user_pic(user_name),
+                "mentions" : []
+            }
+            temp.append(entity)
+    return temp
 
 def mention_tree(name):
     mentions = get_mentions(name)
@@ -50,7 +100,7 @@ def mention_tree(name):
         if user_name != name:
             temp.append(user_name)
     
-    tree[name] = temp
+    tree[name] = temp  
 
     for user in temp:
         mentions = get_mentions(user) 
