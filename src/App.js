@@ -1,4 +1,4 @@
-import logo from './logo.svg';
+
 import Menu from './components/Menu'
 import Input from './components/Input'
 

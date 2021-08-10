@@ -1,21 +1,31 @@
 import { useState } from "react";
-import data from '../data/data-2.json'
-
-
+import Network from './Network'
+import getMentions from '../api'
 function Input(){
     const [name, setName] = useState("")
-    const [show, setShow] = useState(false)
-
+    const [mentionData, setMentionData] = useState(null)
+    const [loading, setLoading] = useState(false)
 
     const submit = (e) => {
         e.preventDefault();
-        alert(`Your user name is: ${name}`)
+
+        if( name !== ''){
+            setLoading(true)
+            setMentionData(null)
+            getMentions(name).then( (res) =>{
+                
+                setMentionData(res.data)
+                setLoading(false)
+            
+            })
+        }
+        
     }
 
     return(
         <div class="ui container">
             <div class="ui grid">
-                <div class="ten wide column">
+                <div class="sixteen wide column centered">
                 
                     <div class="ui fluid card">
                         <div class="content">
@@ -23,7 +33,7 @@ function Input(){
                             <div class="description">
                                 Please enter your username.
                             </div>
-
+                            <br/>
                             <form class="ui form" onSubmit={submit}>
                                 <div class="field">
                                     <div class="ui labeled fluid icon input">
@@ -34,55 +44,29 @@ function Input(){
                                           <i class="search icon"></i>
                                     </div>
                                 </div>
-                                <button class="ui button" type="submit"><i class="add icon"></i>Add</button>
-                            </form>          
-                    
+                                <button class="ui button" type="submit"><i class="add icon"></i>Submit</button>
+                                {
+                                    loading && <div class='ui active inline small loader'></div>
+                                }
+                            </form>    
                         </div>
                     </div>    
 
                 </div>
                 
             </div>
-            <div class="ui grid">
-                <div class="ten wide column">
-                    <div class="ui fluid card">
-                        <div class="content">
-                            
-                            <div class="ui centered card">
-                              <div class="image">
-                                <img src={data.pic}/>
-                              </div>
-                              <div class="content">
-                                <a class="header">{data.name}</a>
-                              </div>
-                            </div>
-                            <div class="ui three stackable cards">
-                                {data.mentions.map(
-                                    (mention,key) => {
-
-                                        return(
-                                            <div key={key} class="card">
-                                                <div class="image">
-                                                    <img src={mention.pic}/>
-                                                </div>
-                                                <div class="content">
-                                                    <a class="header">{mention.name}</a>
-
-                                                    {mention.mentions.map((m, key) =>
-                                                        <li key={key}> {m.name}</li>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )
-                                    }
-
-                                )}
-                                
+            { mentionData && 
+                <div class="ui grid">
+                    <div class="sixteen wide column centered">
+                        <div class="ui fluid card">
+                            <div class="content">
+                                <Network data={mentionData}/>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
+            
         </div>    
     );
 }

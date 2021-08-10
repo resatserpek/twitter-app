@@ -1,6 +1,5 @@
-from networkx.readwrite import json_graph
-import requests
 import networkx as nx
+import requests
 import re
 KEY = 'Yz2OYLuBeAkpC93o6zb250NRk'
 SECRET = 'LE2lGJZ3a4eEjKycgvYHbYpbQxfvBd5pIcrVf8rYwV89d0wd2'
@@ -15,8 +14,10 @@ def get_user_id(name):
     resp = any 
     try:
         resp = requests.get(URL, headers=headers)
+        print(resp)
+        print()
     except requests.exceptions.RequestException as e:
-        print (resp)
+        print('Error')
     data = resp.json()
     return data['id_str']
 
@@ -26,8 +27,9 @@ def get_user_pic(name):
     try:
         resp = requests.get(URL, headers=headers)
     except requests.exceptions.RequestException as e:
-        print (resp)
+        print('Error')
     data = resp.json()
+    print(resp.headers['x-rate-limit-reset'])
     data = re.sub(r'normal', 'bigger', data['profile_image_url_https'])
     return data
 
@@ -37,7 +39,7 @@ def get_user_name(uid):
     try:
         resp = requests.get(URL, headers=headers)
     except requests.exceptions.RequestException as e:
-        print (e)
+        print('Error')
     data = resp.json()['data']
     return data['username']
 
@@ -47,89 +49,40 @@ def get_mentions(name):
     userID = ''
     try:
         userID = get_user_id(name)
+        print(name, )
     except Exception as e:
-        print (e)
+        print('Error')
     URL = 'https://api.twitter.com/2/users/' + userID + '/mentions?expansions=author_id'
     try:
         resp = requests.get(URL, headers=headers)
+        print(resp.headers)
     except requests.exceptions.RequestException as e:
-        print (e)
+        (e)
     return resp.json()['data']
-
-def get_social_circle(name):
-    mentions = get_mentions(name)
-    entity = {
-        "name": name,
-        "pic": get_user_pic(name),
-        "mentions" : get_secondary(name, mentions)
-    }
-    return entity
-    
-
-def get_secondary(name, mentions):
-    temp = []
-    for user in mentions:
-        user_name = get_user_name(user['author_id'])
-        if user_name != name:
-            entity = {
-                "name": user_name,
-                "pic": get_user_pic(user_name),
-                "mentions" : get_third(name, get_mentions(user_name))
-            }
-            temp.append(entity)
-    return temp
-def get_third(name, mentions):
-    temp = []
-    for user in mentions:
-        user_name = get_user_name(user['author_id'])
-        if user_name != name:
-            entity = {
-                "name": user_name,
-                "pic": get_user_pic(user_name),
-                "mentions" : []
-            }
-            temp.append(entity)
-    return temp
-
-def mention_tree(name):
-    mentions = get_mentions(name)
-    tree = {}
-    temp = []
-    for user in mentions:
-        user_name = get_user_name(user['author_id'])
-        if user_name != name:
-            temp.append(user_name)
-    
-    tree[name] = temp  
-
-    for user in temp:
-        mentions = get_mentions(user) 
-        temp = []
-        for u in mentions:
-            u_name = get_user_name(u['author_id'])
-            if u_name != user:
-                temp.append(u_name)
-            tree[user] = temp
-    return tree
-
+#https://api.twitter.com/2/users/by/username/:username
 def mention_graph(name):
+    #Mentions of the input user and adding it as a node to graph
     G = nx.Graph()
-    G.add_node(name)
+    entity1 = {'name': name, 'pic': get_user_pic(name)}
+    G.add_node(name, data=entity1)
 
-    mentions = get_mentions(name)
-    temp = []
-    for user in mentions:
-        user_name = get_user_name(user['author_id'])
-        if user_name != name:
-            temp.append(user_name)
-    for i in temp:
-        G.add_edge(name, i)
+    #Mentioning users
+    for user in get_mentions(name):
+        uName = get_user_name(user['author_id'])
+        entity2 = {
+            "name": uName,
+            "pic": get_user_pic(uName)
+        }
+        G.add_node(uName, data=entity2)
+        G.add_edge(uName, name)
 
-        mentions = get_mentions(i) 
-
-        for u in mentions:
-            user_name = get_user_name(u['author_id'])
-            G.add_node(user_name)
-            G.add_edge(i,user_name)
-
+        for u in get_mentions(uName):
+            sName = get_user_name(u['author_id'])
+            entity3 = {
+                "name": sName,
+                "pic": get_user_pic(sName)
+            }
+            G.add_node(sName, data=entity3)
+            G.add_edge(sName, uName)
     return G
+    
